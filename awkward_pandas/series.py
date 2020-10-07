@@ -1,4 +1,5 @@
 import operator
+import numpy as np
 import pandas as pd
 import awkward1 as ak
 from pandas.core.arrays import ExtensionArray
@@ -38,6 +39,18 @@ class AwkwardSeries(ExtensionArray):
         else:
             return self.from_awkward(result)
 
+    def __array_ufunc__(self, *args, **kwargs):
+        ak_arr = self.data.__array_ufunc__(self, *args, **kwargs)
+        return self.from_awkward(ak_arr)
+
+    @classmethod
+    def __from_arrow__(cls, arr):
+        ak_arr = ak.from_arrow(arr)
+        return cls.from_awkward(ak_arr)
+
+    def __arrow_array__(self):
+        return ak.to_arrow(self.data)
+
     def setitem(self, indexer, value):
         raise ValueError
 
@@ -46,7 +59,7 @@ class AwkwardSeries(ExtensionArray):
         return self.data.layout.nbytes
 
     def copy(self, deep=False):
-        return type(self)(self.data.copy())
+        return self.from_awkward(self.data.copy())
 
     @classmethod
     def _concat_same_type(cls, to_concat):
@@ -62,3 +75,40 @@ class AwkwardSeries(ExtensionArray):
 
     def unique(self):
         raise ValueError
+
+    def __str__(self):
+        return "Awkward Series: " + str(self.data)
+
+    def __eq__(self, other):
+        if isinstance(other, AwkwardSeries):
+            return self.from_awkward(self.data == other.data)
+        elif isinstance(other, ak.Array):
+            return self.from_awkward(self.data == other)
+        else:
+            raise ValueError
+
+    def equals(self, other):
+        if isinstance(other, AwkwardSeries):
+            other = other.data
+        return ak.all(self.data == other)
+
+    @property
+    def _typ(self):
+        return "dataframe"
+
+    @property
+    def columns(self):
+        if self.layout.numfields >= 0:
+            return self.layout.keys()
+        else:
+            return []
+
+    @property
+    def ndim(self):
+        return 1
+
+    def isna(self):
+        return np.array(ak.operations.structure.is_none(self))
+
+    def take(self, indices, *args, **kwargs):
+        return self[indices]
