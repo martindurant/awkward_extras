@@ -1,0 +1,7 @@
+recursive-include awkward_pandas *.py
+recursive-include awkward_zarr *.py
+
+include setup.py
+include README.rst
+include LICENSE.txt
+include MANIFEST.in
