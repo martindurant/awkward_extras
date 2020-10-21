@@ -12,20 +12,30 @@ class AwkwardAccessor:
 
     def __init__(self, pandas_obj):
         if not self._validate(pandas_obj):
-            raise AttributeError("ak accessor called on non-awkward data")
+            raise AttributeError("ak accessor called on incompatible data")
         self._obj = pandas_obj
+        self._arr = None
+
+    @property
+    def arr(self):
+        if self._arr is None:
+            if isinstance(self._obj, AwkwardSeries):
+                self._arr = self._obj
+            else:
+                self._arr = AwkwardSeries(self._obj)
+        return self._arr
 
     @staticmethod
-    def _validate(obj):
-        return isinstance(getattr(obj, "data", None), ak.Array)
+    def _validate(*_):
+        return True
 
     def to_arrow(self):
-        return self._obj.data.to_arrow()
+        return self.arr.data.to_arrow()
 
     def cartesian(self, other, **kwargs):
         if isinstance(other, AwkwardSeries):
             other = other.data
-        return AwkwardSeries(ak.cartesian([self._obj.data, other], **kwargs))
+        return AwkwardSeries(ak.cartesian([self.arr.data, other], **kwargs))
 
     def __getattr__(self, item):
         from .series import AwkwardSeries
@@ -38,7 +48,7 @@ class AwkwardAccessor:
         def f(*others, **kwargs):
             others = [other.data if isinstance(getattr(other, "data", None), ak.Array) else other
                       for other in others]
-            ak_arr = func(self._obj.data, *others, **kwargs)
+            ak_arr = func(self.arr.data, *others, **kwargs)
             # TODO: special case to carry over index and name information where output
             #  is similar to input, e.g., has same length
             if isinstance(ak_arr, ak.Array):

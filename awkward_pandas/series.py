@@ -58,7 +58,7 @@ class AwkwardSeries(ExtensionArray):
         ak_arr = self.data.__array_ufunc__(self, *args, **kwargs)
         return type(self)(ak_arr)
 
-    def _formatting_values(self):
+    def __array__(self):
         # should ONLY be used for printing
         import numpy as np
         return np.array(self.data.tolist(), dtype="O")

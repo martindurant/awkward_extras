@@ -3,8 +3,14 @@ from pandas.api.extensions import ExtensionDtype
 import awkward1 as ak
 
 
+class ADT_representor(type):
+
+    def __repr__(self):
+        return 'AwkwardDType'
+
+
 @pd.api.extensions.register_extension_dtype
-class AwkardType(ExtensionDtype):
+class AwkardType(ExtensionDtype, metaclass=ADT_representor):
     name = 'awkward'
     type = ak.Array
     kind = 'O'
