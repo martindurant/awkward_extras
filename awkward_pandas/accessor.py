@@ -11,12 +11,13 @@ funcs = [n for n in dir(ak) if inspect.isfunction(getattr(ak, n))]
 class AwkwardAccessor:
 
     def __init__(self, pandas_obj):
-        self._validate(pandas_obj)
+        if not self._validate(pandas_obj):
+            raise AttributeError("ak accessor called on non-awkward data")
         self._obj = pandas_obj
 
     @staticmethod
     def _validate(obj):
-        assert isinstance(getattr(obj, "data", None), ak.Array)
+        return isinstance(getattr(obj, "data", None), ak.Array)
 
     def to_arrow(self):
         return self._obj.data.to_arrow()
@@ -24,7 +25,7 @@ class AwkwardAccessor:
     def cartesian(self, other, **kwargs):
         if isinstance(other, AwkwardSeries):
             other = other.data
-        return AwkwardSeries.from_awkward(ak.cartesian([self._obj.data, other], **kwargs))
+        return AwkwardSeries(ak.cartesian([self._obj.data, other], **kwargs))
 
     def __getattr__(self, item):
         from .series import AwkwardSeries
@@ -38,8 +39,12 @@ class AwkwardAccessor:
             others = [other.data if isinstance(getattr(other, "data", None), ak.Array) else other
                       for other in others]
             ak_arr = func(self._obj.data, *others, **kwargs)
+            # TODO: special case to carry over index and name information where output
+            #  is similar to input, e.g., has same length
             if isinstance(ak_arr, ak.Array):
-                return AwkwardSeries.from_awkward(ak_arr)
+                # TODO: perhaps special case here if the output can be represented
+                #  as a regular num/cupy array
+                return AwkwardSeries(ak_arr)
             return ak_arr
 
         return f

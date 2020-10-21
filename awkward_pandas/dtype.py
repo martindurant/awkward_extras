@@ -21,7 +21,7 @@ class AwkardType(ExtensionDtype):
     def __from_arrow__(cls, arrow_array):
         from .series import AwkwardSeries
         ak_arr = ak.from_arrow(arrow_array)
-        return AwkwardSeries.from_awkward(ak_arr)
+        return AwkwardSeries(ak_arr)
 
     @property
     def _is_boolean(self) -> bool:
@@ -33,4 +33,8 @@ class AwkardType(ExtensionDtype):
 
     @classmethod
     def construct_array_type(cls):
-        return AwkardType
+        from .series import AwkwardSeries
+        return AwkwardSeries
+
+    def __repr__(self):
+        return "AwkwardDType"
