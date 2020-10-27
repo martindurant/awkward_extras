@@ -3,14 +3,13 @@ import operator
 
 import numpy as np
 import awkward1 as ak
-from pandas.core.arrays import ExtensionArray
+from pandas.core.arrays import ExtensionArray, ExtensionScalarOpsMixin
 from .dtype import AwkardType
 
 
-class AwkwardSeries(ExtensionArray):
-    dtype = AwkardType
+class AwkwardSeries(ExtensionArray, ExtensionScalarOpsMixin):
     ndim = 1
-    _dtype = AwkardType()
+    dtype = AwkardType()
     _accessors = ['ak']
 
     def __init__(self, ak_arr=None):
@@ -30,7 +29,7 @@ class AwkwardSeries(ExtensionArray):
 
     @classmethod
     def _from_sequence(cls, scalars, dtype=None, copy=False):
-        return cls().__init__(scalars)
+        return cls(scalars)
 
     @classmethod
     def _from_factorized(cls, values, original):
@@ -45,7 +44,7 @@ class AwkwardSeries(ExtensionArray):
 
     def __getitem__(self, *args):
         result = operator.getitem(self.data, *args)
-        if len(args) == 1 and isinstance(args[0], slice):
+        if len(args) == 1 and isinstance(args[0], (slice, Iterable)):
             return type(self)(self.data.__getitem__(*args))
         if isinstance(result, tuple):
             return self._box_scalar(result)
@@ -58,8 +57,10 @@ class AwkwardSeries(ExtensionArray):
         ak_arr = self.data.__array_ufunc__(self, *args, **kwargs)
         return type(self)(ak_arr)
 
-    def __array__(self):
+    def __array__(self, dtype=None):
         # should ONLY be used for printing
+        if isinstance(type, AwkardType):
+            return self.data
         import numpy as np
         return np.array(self.data.tolist(), dtype="O")
 
@@ -91,7 +92,7 @@ class AwkwardSeries(ExtensionArray):
         return self.data.tolist()
 
     def argsort(self, **kwargs):
-        return self.data.argsort(**kwargs)
+        return ak.argsort(self.data)
 
     def unique(self):
         raise ValueError
@@ -130,7 +131,30 @@ class AwkwardSeries(ExtensionArray):
     def take(self, indices, *args, **kwargs):
         return self[indices]
 
+    def astype(self, dtype, copy=False):
+        if isinstance(dtype, AwkardType):
+            if copy:
+                return type(self)(self.data.copy())
+            else:
+                return self
+        if dtype in [object, "O", "object"]:
+            return self.tolist()
+        return ak.values_astype(self.data, dtype)
+
     @property
     def ak(self):
         from .accessor import AwkwardAccessor
         return AwkwardAccessor(self)
+
+    @classmethod
+    def _create_method(cls, op, coerce_to_dtype=True, result_dtype=None):
+        def op2(a, b):
+            if hasattr(b, 'data'):
+                b = b.data
+            return cls(op(a.data, b))
+
+        return op2
+
+
+AwkwardSeries._add_arithmetic_ops()
+AwkwardSeries._add_comparison_ops()

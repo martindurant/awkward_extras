@@ -18,7 +18,7 @@ class AwkardType(ExtensionDtype, metaclass=ADT_representor):
 
     @classmethod
     def construct_from_string(cls, string):
-        if string == cls.name:
+        if string in [cls.name, repr(cls)]:
             return cls()
         else:
             raise ValueError
@@ -43,4 +43,5 @@ class AwkardType(ExtensionDtype, metaclass=ADT_representor):
         return AwkwardSeries
 
     def __repr__(self):
+        ## TODO: instance repr should be different from class one?
         return "AwkwardDType"
