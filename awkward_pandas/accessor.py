@@ -3,6 +3,7 @@ import inspect
 import pandas as pd
 import awkward1 as ak
 from .series import AwkwardSeries
+from .dtype import AwkardType
 
 funcs = [n for n in dir(ak) if inspect.isfunction(getattr(ak, n))]
 
@@ -21,7 +22,14 @@ class AwkwardAccessor:
         if self._arr is None:
             if isinstance(self._obj, AwkwardSeries):
                 self._arr = self._obj
+            elif isinstance(self._obj.dtype, AwkardType) and isinstance(self._obj, pd.Series):
+                # this is a pandas Series that contains an Awkward
+                self._arr = self._obj.values
+            elif isinstance(self._obj.dtype, AwkardType):
+                # a dask series - figure out what to do here
+                raise NotImplementedError
             else:
+                # this recreates series, possibly by iteration
                 self._arr = AwkwardSeries(self._obj)
         return self._arr
 

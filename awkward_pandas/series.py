@@ -136,6 +136,8 @@ class AwkwardSeries(ExtensionArray, ExtensionScalarOpsMixin):
         return self[indices]
 
     def astype(self, dtype, copy=False):
+        # operates elementwise
+        # if we really wanted a normal array out, would use ak.to_numpy
         if isinstance(dtype, AwkardType):
             if copy:
                 return type(self)(self.data.copy())
