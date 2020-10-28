@@ -27,6 +27,10 @@ class AwkwardSeries(ExtensionArray, ExtensionScalarOpsMixin):
         else:
             raise ValueError
 
+    def __dask_tokenize__(self):
+        # prevent dask hashing via asarray/tolist, which is very slow
+        return str(id(self))  # require exact identity, since is immutable
+
     @classmethod
     def _from_sequence(cls, scalars, dtype=None, copy=False):
         return cls(scalars)
