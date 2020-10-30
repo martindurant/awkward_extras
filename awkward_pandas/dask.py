@@ -7,7 +7,7 @@ from .accessor import AwkwardAccessor, ak
 
 @make_array_nonempty.register(AwkardType)
 def _(*_):
-    return AwkwardSeries([1])
+    return AwkwardSeries([1, 2])
 
 
 @make_scalar.register(AwkardType)
