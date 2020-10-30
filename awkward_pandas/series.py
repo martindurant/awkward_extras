@@ -3,6 +3,7 @@ import operator
 
 import numpy as np
 import awkward1 as ak
+import pandas as pd
 from pandas.core.arrays import ExtensionArray, ExtensionScalarOpsMixin
 from .dtype import AwkardType
 
@@ -20,7 +21,9 @@ class AwkwardSeries(ExtensionArray, ExtensionScalarOpsMixin):
         elif isinstance(ak_arr, str):
             self.data = ak.from_json(ak_arr)
         elif isinstance(ak_arr, Iterable):
-            self.data = ak.from_iter(ak_arr)
+            self.data = ak.from_iter(
+                None if a is pd.NA else a for a in ak_arr
+            )
         elif ak_arr is None:
             # empty series
             self.data = ak.Array(data=[])

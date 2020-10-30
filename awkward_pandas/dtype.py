@@ -14,14 +14,11 @@ class AwkardType(ExtensionDtype, metaclass=ADT_representor):
     name = 'awkward'
     type = ak.Array
     kind = 'O'
-    na_value = None
+    na_value = pd.NA
 
     @classmethod
     def construct_from_string(cls, string):
-        if string in [cls.name, repr(cls)]:
-            return cls()
-        else:
-            raise ValueError
+        return cls()
 
     @classmethod
     def __from_arrow__(cls, arrow_array):
